@@ -1,5 +1,5 @@
 from django import forms
-from .models import Memory, MemoryComment
+from .models import Memory, MemoryComment, Story
 from friends.models import FriendRequest
 
 
@@ -10,9 +10,16 @@ class MemoryCreateForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Ej. Tarde de playa con amigos'}),
             'description': forms.Textarea(attrs={'class': 'form-input', 'rows': 3, 'placeholder': '¿Qué hizo especial este momento?'}),
-            'file': forms.FileInput(attrs={'class': 'form-file-input', 'accept': 'image/*,video/*'}),
+            'file': forms.FileInput(attrs={
+                'class': 'form-file-input',
+                'accept': 'image/*,video/*',
+                'capture': 'environment',
+            }),
             'location': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Ej. Viña del Mar, Chile'}),
-            'tagged_friends': forms.SelectMultiple(attrs={'class': 'form-select'}),
+            'tagged_friends': forms.SelectMultiple(attrs={
+                'class': 'form-select friend-selector',
+                'size': 6,
+            }),
         }
 
     def __init__(self, *args, **kwargs):
@@ -38,4 +45,21 @@ class MemoryCommentForm(forms.ModelForm):
         }
         labels = {
             'content': ''
+        }
+
+
+class StoryCreateForm(forms.ModelForm):
+    class Meta:
+        model = Story
+        fields = ['file', 'caption']
+        widgets = {
+            'file': forms.FileInput(attrs={
+                'class': 'form-file-input',
+                'accept': 'image/*,video/*',
+                'capture': 'environment',
+            }),
+            'caption': forms.TextInput(attrs={
+                'class': 'form-input',
+                'placeholder': 'Agrega un texto a tu historia (opcional)',
+            }),
         }

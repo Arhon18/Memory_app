@@ -23,8 +23,10 @@
           Recuerdos
         </div>
         <div>
-          <strong style="display:block; color:var(--text-main); font-size: 1.1rem;">{{ friends|length }}</strong>
-          Amigos
+          <a href="{% url 'friends:my_friends' %}">
+            <strong style="display:block; color:var(--text-main); font-size: 1.1rem;">{{ friends|length }}</strong>
+            Amigos
+          </a>
         </div>
       </div>
     </div>
@@ -46,19 +48,47 @@
   <section class="main-feed">
     
     <!-- Amigos Conectados / Historias bar -->
-    {% if friends %}
-      <div class="glass-panel" style="padding: 1rem 1.25rem; margin-bottom: 1.5rem;">
+    <div class="glass-panel stories-panel" style="padding: 1rem 1.25rem; margin-bottom: 1.5rem;">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem;">
-          <span style="font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim);">Tus Amigos</span>
-          <a href="{% url 'friends:my_friends' %}" style="font-size: 0.8rem; color: #a5b4fc;">Ver todos</a>
+          <span style="font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim);">Historias · duran 24 horas</span>
+          <span style="font-size: 0.8rem; color: var(--text-dim);">Comparte algo de hoy</span>
         </div>
-        <div class="friends-rail">
-          {% for friend in friends %}
-            <a href="{% url 'accounts:profile' user_id=friend.id %}" class="friends-rail-item">
-              <div class="rail-avatar-ring">
-                <img src="{{ friend.avatar_url }}" alt="{{ friend.first_name }}" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; display: block; border: 2px solid var(--bg-dark);">
-              </div>
-              <span>{{ friend.first_name }}</span>
+        <div class="stories-rail">
+          <form method="post" action="{% url 'memories:create_story' %}" enctype="multipart/form-data" class="story-upload">
+            {% csrf_token %}
+            <label for="{{ story_form.file.id_for_label }}" class="story-add">+</label>
+            {{ story_form.file }}
+            {{ story_form.caption }}
+            <button type="submit" class="btn btn-primary btn-sm">Publicar historia</button>
+            <small class="camera-help">Puedes tomar la foto desde la cámara del celular.</small>
+          </form>
+          {% for story in active_stories %}
+            <a href="{% url 'memories:story_detail' story_id=story.id %}" class="story-item" aria-label="Ver historia de {{ story.author.get_full_name }}">
+              {% if story.is_video %}
+                <video src="{{ story.file.url }}" muted autoplay loop playsinline></video>
+              {% else %}
+                <img src="{{ story.file.url }}" alt="Historia de {{ story.author.get_full_name }}">
+              {% endif %}
+              <span>{{ story.author.first_name }}</span>
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+
+    {% if recommended_videos %}
+      <div class="glass-panel recommendations-panel" style="padding: 1.25rem; margin-bottom: 1.5rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+          <div>
+            <h2 style="font-family:var(--font-display);font-size:1.25rem;">Videos recomendados</h2>
+            <p style="color:var(--text-dim);font-size:.82rem;">Videos compartidos por tus amigos y grupos</p>
+          </div>
+          <span class="section-pill">Para ti</span>
+        </div>
+        <div class="recommended-videos">
+          {% for video in recommended_videos %}
+            <a href="{% url 'memories:detail' memory_id=video.id %}" class="recommended-video">
+              <video src="{{ video.file.url }}" muted preload="metadata"></video>
+              <span>{{ video.title|default:"Ver video" }}</span>
             </a>
           {% endfor %}
         </div>
@@ -98,7 +128,9 @@
                 </h4>
                 <p>
                   {{ memory.created_at|timesince }} atrás
-                  {% if memory.location %} &bull; 📍 {{ memory.location }}{% endif %}
+                  {% if memory.location %}
+                    &bull; <a href="https://www.google.com/maps/search/?api=1&query={{ memory.location|urlencode }}" target="_blank" rel="noopener" style="color:var(--primary);">📍 {{ memory.location }}</a>
+                  {% endif %}
                 </p>
               </div>
             </div>

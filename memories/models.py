@@ -1,6 +1,8 @@
 import os
+from datetime import timedelta
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 
 
 def memory_media_upload_path(instance, filename):
@@ -42,6 +44,8 @@ class Memory(models.Model):
     )
     
     location = models.CharField('Lugar', max_length=150, blank=True)
+    latitude = models.DecimalField('Latitud', max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField('Longitud', max_digits=9, decimal_places=6, null=True, blank=True)
     created_at = models.DateTimeField('Fecha de Creación', auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -77,6 +81,40 @@ class Memory(models.Model):
         return self.comments.count()
 
 
+def story_media_upload_path(instance, filename):
+    return f"stories/user_{instance.author_id}/{filename}"
+
+
+class Story(models.Model):
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='stories'
+    )
+    file = models.FileField('Foto o Video', upload_to=story_media_upload_path)
+    caption = models.CharField('Texto', max_length=180, blank=True)
+    media_type = models.CharField(max_length=10, choices=Memory.TYPE_CHOICES, default=Memory.TYPE_IMAGE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Historia'
+        verbose_name_plural = 'Historias'
+
+    def save(self, *args, **kwargs):
+        if self.file:
+            ext = os.path.splitext(self.file.name)[1].lower()
+            self.media_type = Memory.TYPE_VIDEO if ext in ['.mp4', '.mov', '.avi', '.webm', '.mkv'] else Memory.TYPE_IMAGE
+        if not self.expires_at:
+            self.expires_at = timezone.now() + timedelta(hours=24)
+        super().save(*args, **kwargs)
+
+    @property
+    def is_video(self):
+        return self.media_type == Memory.TYPE_VIDEO
+
+
 class MemoryLike(models.Model):
     memory = models.ForeignKey(Memory, on_delete=models.CASCADE, related_name='likes')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='memory_likes')
@@ -94,6 +132,13 @@ class MemoryLike(models.Model):
 class MemoryComment(models.Model):
     memory = models.ForeignKey(Memory, on_delete=models.CASCADE, related_name='comments')
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='memory_comments')
+    parent = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='replies',
+    )
     content = models.TextField('Comentario', max_length=600)
     created_at = models.DateTimeField(auto_now_add=True)
 

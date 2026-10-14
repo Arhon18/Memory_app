@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
 from accounts.models import User
-from .models import FriendRequest
+from .models import FriendRequest, Follow
 
 
 @login_required
@@ -12,6 +12,23 @@ def send_friend_request(request, user_id):
     if receiver == request.user:
         messages.warning(request, 'No puedes enviarte una solicitud de amistad a ti mismo.')
         return redirect('accounts:profile', user_id=user_id)
+
+    if receiver.profile_privacy == User.PRIVACY_PUBLIC:
+        Follow.objects.get_or_create(follower=request.user, following=receiver)
+        if Follow.objects.filter(follower=receiver, following=request.user).exists():
+            friendship, created = FriendRequest.objects.get_or_create(
+                sender=request.user,
+                receiver=receiver,
+                defaults={'status': FriendRequest.STATUS_ACCEPTED},
+            )
+            if not created and friendship.status != FriendRequest.STATUS_ACCEPTED:
+                friendship.status = FriendRequest.STATUS_ACCEPTED
+                friendship.save(update_fields=['status', 'updated_at'])
+            messages.success(request, f'¡Ahora tú y {receiver.get_full_name()} son amigos!')
+        else:
+            messages.success(request, f'Ahora sigues a {receiver.get_full_name()}.')
+        next_url = request.META.get('HTTP_REFERER') or redirect('accounts:profile', user_id=user_id).url
+        return redirect(next_url)
 
     # Verificar si ya existe relación
     existing = FriendRequest.objects.filter(
@@ -45,6 +62,15 @@ def send_friend_request(request, user_id):
 
 
 @login_required
+def unfollow_user(request, user_id):
+    target = get_object_or_404(User, id=user_id)
+    Follow.objects.filter(follower=request.user, following=target).delete()
+    messages.info(request, f'Has dejado de seguir a {target.get_full_name()}.')
+    next_url = request.META.get('HTTP_REFERER') or redirect('accounts:profile', user_id=user_id).url
+    return redirect(next_url)
+
+
+@login_required
 def accept_friend_request(request, request_id):
     req = get_object_or_404(FriendRequest, id=request_id, receiver=request.user, status=FriendRequest.STATUS_PENDING)
     req.status = FriendRequest.STATUS_ACCEPTED
@@ -57,9 +83,8 @@ def accept_friend_request(request, request_id):
 @login_required
 def reject_friend_request(request, request_id):
     req = get_object_or_404(FriendRequest, id=request_id, receiver=request.user, status=FriendRequest.STATUS_PENDING)
-    req.status = FriendRequest.STATUS_REJECTED
-    req.save()
-    messages.info(request, 'Has rechazado la solicitud de amistad.')
+    req.delete()
+    messages.info(request, 'Has rechazado la solicitud de amistad; la solicitud fue cancelada.')
     next_url = request.META.get('HTTP_REFERER') or redirect('friends:requests').url
     return redirect(next_url)
 

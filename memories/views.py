@@ -3,8 +3,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Q
-from .models import Memory, MemoryLike, MemoryComment
-from .forms import MemoryCreateForm, MemoryCommentForm
+from datetime import timedelta
+from django.utils import timezone
+from .models import Memory, MemoryLike, MemoryComment, Story
+from .forms import MemoryCreateForm, MemoryCommentForm, StoryCreateForm
+from .geocoding import geocode_location
 from friends.models import FriendRequest
 from groups.models import MemoryGroup
 
@@ -27,6 +30,11 @@ def feed_view(request):
         (Q(author__in=friends) & Q(group__isnull=True)) |
         Q(group__in=user_groups)
     ).distinct().select_related('author', 'group').prefetch_related('likes', 'comments', 'tagged_friends', 'comments__author')
+    visible_videos = memories.filter(media_type=Memory.TYPE_VIDEO)
+    active_stories = Story.objects.filter(
+        expires_at__gt=timezone.now(),
+        author__in=list(friends) + [request.user],
+    ).select_related('author')
 
     # Identificar IDs de recuerdos a los que el usuario dio like
     user_liked_memory_ids = set(
@@ -41,8 +49,39 @@ def feed_view(request):
         'comment_form': comment_form,
         'friends': friends[:5],
         'user_groups': user_groups[:5],
+        'active_stories': active_stories,
+        'recommended_videos': visible_videos[:6],
+        'story_form': StoryCreateForm(),
     }
     return render(request, 'memories/feed.html', context)
+
+
+@login_required
+def create_story_view(request):
+    if request.method == 'POST':
+        form = StoryCreateForm(request.POST, request.FILES)
+        if form.is_valid():
+            story = form.save(commit=False)
+            story.author = request.user
+            story.expires_at = timezone.now() + timedelta(hours=24)
+            story.save()
+            messages.success(request, 'Tu historia estará disponible durante 24 horas.')
+        else:
+            messages.error(request, 'No se pudo publicar la historia. Revisa el archivo seleccionado.')
+    return redirect('memories:feed')
+
+
+@login_required
+def story_detail_view(request, story_id):
+    story = get_object_or_404(
+        Story.objects.select_related('author'),
+        id=story_id,
+        expires_at__gt=timezone.now(),
+    )
+    if story.author != request.user and not FriendRequest.are_friends(request.user, story.author):
+        messages.error(request, 'Solo los amigos del autor pueden ver esta historia.')
+        return redirect('memories:feed')
+    return render(request, 'memories/story_detail.html', {'story': story})
 
 
 @login_required
@@ -62,6 +101,10 @@ def create_memory_view(request, group_id=None):
             if group:
                 memory.group = group
             memory.save()
+            coordinates = geocode_location(memory.location)
+            if coordinates:
+                memory.latitude, memory.longitude = coordinates
+                memory.save(update_fields=['latitude', 'longitude'])
             form.save_m2m() # Guarda tagged_friends
 
             messages.success(request, '¡Tu recuerdo ha sido compartido exitosamente!')
@@ -79,7 +122,15 @@ def create_memory_view(request, group_id=None):
 
 @login_required
 def memory_detail_view(request, memory_id):
-    memory = get_object_or_404(Memory.objects.select_related('author', 'group').prefetch_related('comments__author', 'likes__user', 'tagged_friends'), id=memory_id)
+    memory = get_object_or_404(
+        Memory.objects.select_related('author', 'group').prefetch_related(
+            'comments__author',
+            'comments__replies__author',
+            'likes__user',
+            'tagged_friends',
+        ),
+        id=memory_id,
+    )
     
     # Comprobar permisos para ver este recuerdo:
     # Si tiene grupo: debe ser miembro
@@ -89,7 +140,11 @@ def memory_detail_view(request, memory_id):
             return redirect('memories:feed')
     else:
         # Si no tiene grupo: debe ser el autor o amigo del autor
-        if memory.author != request.user and not FriendRequest.are_friends(request.user, memory.author):
+        if (
+            memory.author != request.user
+            and not FriendRequest.are_friends(request.user, memory.author)
+            and memory.author.profile_privacy != memory.author.PRIVACY_PUBLIC
+        ):
             messages.error(request, 'Debes ser amigo del autor para ver este recuerdo.')
             return redirect('accounts:profile', user_id=memory.author.id)
 
@@ -100,6 +155,7 @@ def memory_detail_view(request, memory_id):
         'memory': memory,
         'is_liked': is_liked,
         'comment_form': comment_form,
+        'root_comments': memory.comments.filter(parent__isnull=True),
     })
 
 
@@ -150,6 +206,32 @@ def add_comment_view(request, memory_id):
             comment.author = request.user
             comment.save()
             messages.success(request, 'Comentario añadido.')
+
+    next_url = request.META.get('HTTP_REFERER') or redirect('memories:detail', memory_id=memory.id).url
+    return redirect(next_url)
+
+
+@login_required
+def reply_comment_view(request, memory_id, comment_id):
+    memory = get_object_or_404(Memory, id=memory_id)
+    parent = get_object_or_404(MemoryComment, id=comment_id, memory=memory)
+
+    if memory.group and not memory.group.is_member(request.user):
+        messages.error(request, 'No tienes permiso para responder en este recuerdo.')
+        return redirect('memories:feed')
+    if not memory.group and memory.author != request.user and not FriendRequest.are_friends(request.user, memory.author):
+        messages.error(request, 'Debes ser amigo del autor para responder.')
+        return redirect('accounts:profile', user_id=memory.author.id)
+
+    if request.method == 'POST':
+        form = MemoryCommentForm(request.POST)
+        if form.is_valid():
+            reply = form.save(commit=False)
+            reply.memory = memory
+            reply.author = request.user
+            reply.parent = parent
+            reply.save()
+            messages.success(request, 'Respuesta añadida.')
 
     next_url = request.META.get('HTTP_REFERER') or redirect('memories:detail', memory_id=memory.id).url
     return redirect(next_url)

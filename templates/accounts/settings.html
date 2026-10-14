@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Ajustes y privacidad - Memory{% endblock %}
+
+{% block content %}
+<div class="settings-page">
+  <div class="settings-heading">
+    <div>
+      <span class="settings-eyebrow">Cuenta</span>
+      <h1>Ajustes y privacidad</h1>
+      <p>Consulta y actualiza tus datos personales y la forma en que apareces en Memory.</p>
+    </div>
+    <img src="{{ user.avatar_url }}" alt="{{ user.get_full_name }}" class="settings-avatar">
+  </div>
+
+  <div class="settings-layout">
+    <aside class="glass-panel settings-sidebar">
+      <a class="settings-sidebar-link active" href="{% url 'accounts:settings' %}">Datos de la cuenta</a>
+      <a class="settings-sidebar-link" href="{% url 'accounts:profile' user_id=user.id %}">Mi perfil</a>
+      <a class="settings-sidebar-link" href="{% url 'friends:requests' %}">Amigos y privacidad</a>
+    </aside>
+
+    <section class="glass-panel settings-card">
+      <h2>Datos de la cuenta</h2>
+      <p class="settings-card-intro">Estos datos son tuyos. Puedes modificarlos cuando quieras.</p>
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="alert alert-error">{{ form.non_field_errors }}</div>{% endif %}
+
+        <div class="form-group">
+          <label class="form-label" for="{{ form.email.id_for_label }}">Correo electrónico</label>
+          {{ form.email }}
+          {% if form.email.errors %}<small class="form-error">{{ form.email.errors.0 }}</small>{% endif %}
+        </div>
+        <div class="settings-form-grid">
+          <div class="form-group">
+            <label class="form-label" for="{{ form.first_name.id_for_label }}">Nombre</label>
+            {{ form.first_name }}
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="{{ form.last_name.id_for_label }}">Apellido</label>
+            {{ form.last_name }}
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.bio.id_for_label }}">Biografía</label>
+          {{ form.bio }}
+        </div>
+        <div class="settings-form-grid">
+          <div class="form-group">
+            <label class="form-label" for="{{ form.avatar.id_for_label }}">Foto de perfil</label>
+            {{ form.avatar }}
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="{{ form.cover_image.id_for_label }}">Foto de portada</label>
+            {{ form.cover_image }}
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.birth_date.id_for_label }}">Fecha de nacimiento</label>
+          {{ form.birth_date }}
+        </div>
+        <div class="settings-privacy-section">
+          <span class="settings-eyebrow">Privacidad</span>
+          <h3>Visibilidad del perfil</h3>
+          <p>Un perfil público puede ser seguido directamente. Un perfil privado requiere aceptar una solicitud de amistad.</p>
+          <label class="form-label" for="{{ form.profile_privacy.id_for_label }}">Quién puede encontrar y ver tus recuerdos</label>
+          {{ form.profile_privacy }}
+        </div>
+        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+      </form>
+    </section>
+  </div>
+</div>
+{% endblock %}

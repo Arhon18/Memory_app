@@ -9,6 +9,7 @@ class MemoryGroup(models.Model):
     name = models.CharField('Nombre del Grupo', max_length=150)
     description = models.TextField('Descripción o Propósito', blank=True, max_length=400)
     cover_image = models.ImageField('Portada del Grupo', upload_to='group_covers/', blank=True, null=True)
+    profile_image = models.ImageField('Foto de Perfil del Grupo', upload_to='group_profiles/', blank=True, null=True)
     creator = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -35,6 +36,12 @@ class MemoryGroup(models.Model):
         if self.cover_image and hasattr(self.cover_image, 'url'):
             return self.cover_image.url
         return "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=800&q=80"
+
+    @property
+    def profile_url(self):
+        if self.profile_image and hasattr(self.profile_image, 'url'):
+            return self.profile_image.url
+        return self.cover_url
 
     def is_member(self, user):
         return self.members.filter(id=user.id).exists()

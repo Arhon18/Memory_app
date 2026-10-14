@@ -3,6 +3,12 @@
 
 {% block title %}{{ profile_user.get_full_name }} (@{{ profile_user.email|slice:":12" }}) - Memory{% endblock %}
 
+{% block extra_head %}
+  {% if can_view_content %}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  {% endif %}
+{% endblock %}
+
 {% block content %}
 <div style="max-width: 900px; margin: 0 auto;">
 
@@ -71,6 +77,10 @@
             <a href="{% url 'friends:remove_friend' user_id=profile_user.id %}" onclick="return confirm('¿Seguro que deseas eliminar de tus amigos a {{ profile_user.first_name }}?');" class="btn btn-secondary btn-sm" style="color: #f87171;">
               Eliminar Amigo
             </a>
+          {% elif profile_is_public and is_following %}
+            <a href="{% url 'friends:unfollow' user_id=profile_user.id %}" class="btn btn-secondary">Dejar de seguir</a>
+          {% elif profile_is_public %}
+            <a href="{% url 'friends:send_request' user_id=profile_user.id %}" class="btn btn-primary">Seguir</a>
           {% elif relationship_status == 'sent_pending' %}
             <span class="btn btn-secondary btn-sm" style="opacity: 0.8; cursor: default;">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
@@ -102,6 +112,35 @@
 
   <!-- Content Section (Conditional based on friendship) -->
   {% if can_view_content %}
+    <section class="profile-map-panel glass-panel">
+      <div class="profile-map-heading">
+        <div>
+          <span class="settings-eyebrow">Recuerdos con ubicación</span>
+          <h2>Mapa de {{ profile_user.first_name }}</h2>
+          <p>Explora los lugares donde se tomaron sus fotos y videos.</p>
+        </div>
+        <span class="map-count">{{ map_memories|length }} ubicaciones</span>
+      </div>
+      {% if map_memories %}
+        <div id="profile-map" class="profile-map" aria-label="Mapa de recuerdos"></div>
+      {% else %}
+        <div class="profile-map-empty">
+          <span>📍</span>
+          <p>Aún no hay recuerdos con coordenadas para mostrar en el mapa.</p>
+        </div>
+      {% endif %}
+      {% if memories_without_coordinates %}
+        <div class="map-addresses">
+          <strong>Direcciones guardadas</strong>
+          {% for memory in memories_without_coordinates %}
+            <a href="https://www.google.com/maps/search/?api=1&query={{ memory.location|urlencode }}" target="_blank" rel="noopener">
+              📍 {{ memory.location }} · {{ memory.title|default:"Ver recuerdo" }}
+            </a>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </section>
+
     <!-- User's memories grid / feed -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
       <h2 style="font-family: var(--font-display); font-size: 1.4rem;">
@@ -182,4 +221,28 @@
   {% endif %}
 
 </div>
+{% endblock %}
+
+{% block extra_js %}
+  {% if can_view_content and map_memories %}
+    {{ map_memories|json_script:"profile-map-data" }}
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      const mapData = JSON.parse(document.getElementById('profile-map-data').textContent);
+      const profileMap = L.map('profile-map');
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 19
+      }).addTo(profileMap);
+
+      const bounds = [];
+      mapData.forEach((memory) => {
+        const coordinates = [memory.latitude, memory.longitude];
+        bounds.push(coordinates);
+        L.marker(coordinates).addTo(profileMap)
+          .bindPopup(`<strong>${memory.title}</strong><br>${memory.location}<br><a href="/memories/${memory.id}/">Abrir recuerdo</a>`);
+      });
+      profileMap.fitBounds(bounds, {padding: [24, 24], maxZoom: 14});
+    </script>
+  {% endif %}
 {% endblock %}

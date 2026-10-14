@@ -6,11 +6,12 @@ from friends.models import FriendRequest
 class MemoryGroupForm(forms.ModelForm):
     class Meta:
         model = MemoryGroup
-        fields = ['name', 'description', 'cover_image']
+        fields = ['name', 'description', 'profile_image', 'cover_image']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Ej. Viaje al Sur 2026, Amigos de la U'}),
             'description': forms.Textarea(attrs={'class': 'form-input', 'rows': 3, 'placeholder': 'Describe este grupo o álbum de recuerdos compartido...'}),
             'cover_image': forms.FileInput(attrs={'class': 'form-file-input', 'accept': 'image/*'}),
+            'profile_image': forms.FileInput(attrs={'class': 'form-file-input', 'accept': 'image/*'}),
         }
 
 

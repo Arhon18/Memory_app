@@ -1,3 +1,4 @@
 from django.contrib import admin
+from .models import Memory, MemoryComment, MemoryLike, Story
 
-# Register your models here.
+admin.site.register([Memory, MemoryComment, MemoryLike, Story])

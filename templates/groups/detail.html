@@ -13,6 +13,7 @@
       
       <div style="position: absolute; bottom: 1.5rem; left: 2rem; right: 2rem; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
         <div>
+          <img src="{{ group.profile_url }}" alt="Foto de perfil de {{ group.name }}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid white;margin-bottom:.6rem;">
           <span style="display: inline-block; background: rgba(99, 102, 241, 0.25); border: 1px solid rgba(99, 102, 241, 0.4); padding: 0.2rem 0.75rem; border-radius: var(--radius-full); font-size: 0.75rem; color: #c7d2fe; font-weight: 700; margin-bottom: 0.5rem;">
             ÁLBUM COLABORATIVO
           </span>
@@ -102,6 +103,9 @@
 
                 {% if mem.description %}
                   <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 0.75rem;">{{ mem.description|truncatechars:70 }}</p>
+                {% endif %}
+                {% if mem.location %}
+                  <a href="https://www.google.com/maps/search/?api=1&query={{ mem.location|urlencode }}" target="_blank" rel="noopener" style="font-size:.8rem;color:var(--primary);">📍 {{ mem.location }}</a>
                 {% endif %}
               </div>
 

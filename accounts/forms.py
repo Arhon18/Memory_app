@@ -90,12 +90,20 @@ class LoginForm(forms.Form):
 class ProfileEditForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'bio', 'avatar', 'cover_image', 'birth_date']
+        fields = ['email', 'first_name', 'last_name', 'bio', 'avatar', 'cover_image', 'birth_date', 'profile_privacy']
         widgets = {
+            'email': forms.EmailInput(attrs={'class': 'form-input', 'autocomplete': 'email'}),
             'first_name': forms.TextInput(attrs={'class': 'form-input'}),
             'last_name': forms.TextInput(attrs={'class': 'form-input'}),
             'bio': forms.Textarea(attrs={'class': 'form-input', 'rows': 3}),
             'birth_date': forms.DateInput(attrs={'class': 'form-input', 'type': 'date'}),
             'avatar': forms.FileInput(attrs={'class': 'form-file-input', 'accept': 'image/*'}),
             'cover_image': forms.FileInput(attrs={'class': 'form-file-input', 'accept': 'image/*'}),
+            'profile_privacy': forms.Select(attrs={'class': 'form-select'}),
         }
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email', '').strip().lower()
+        if User.objects.filter(email__iexact=email).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError('Este correo electrónico ya está en uso.')
+        return email

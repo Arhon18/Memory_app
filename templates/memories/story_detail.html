@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Historia de {{ story.author.get_full_name }} - Memory{% endblock %}
+
+{% block content %}
+<div class="story-viewer">
+  <a href="{% url 'memories:feed' %}" class="btn btn-secondary story-back">← Volver al inicio</a>
+  <div class="story-viewer-card">
+    <div class="story-viewer-header">
+      <img src="{{ story.author.avatar_url }}" alt="{{ story.author.get_full_name }}" class="user-avatar-sm">
+      <div>
+        <strong>{{ story.author.get_full_name }}</strong>
+        <small>{{ story.created_at|timesince }} atrás · desaparece en 24 horas</small>
+      </div>
+    </div>
+    <div class="story-viewer-media">
+      {% if story.is_video %}
+        <video src="{{ story.file.url }}" controls autoplay playsinline></video>
+      {% else %}
+        <img src="{{ story.file.url }}" alt="Historia de {{ story.author.get_full_name }}">
+      {% endif %}
+    </div>
+    {% if story.caption %}
+      <p class="story-viewer-caption">{{ story.caption }}</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

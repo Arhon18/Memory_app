@@ -77,3 +77,24 @@ class FriendRequest(models.Model):
         received = cls.objects.filter(receiver=user, status=cls.STATUS_ACCEPTED).values_list('sender_id', flat=True)
         friend_ids = set(sent).union(set(received))
         return User.objects.filter(id__in=friend_ids)
+
+
+class Follow(models.Model):
+    follower = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='following',
+    )
+    following = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='followers',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('follower', 'following')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.follower} sigue a {self.following}'

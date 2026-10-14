@@ -45,14 +45,20 @@
               Haz clic para seleccionar tu foto o video
             </p>
             <p style="color: var(--text-dim); font-size: 0.8rem;">
-              Soporta JPG, PNG, WEBP, MP4, MOV, WEBM
+                Soporta JPG, PNG, WEBP, MP4, MOV, WEBM. En el celular puedes tomar la foto directamente.
             </p>
           </div>
+          <small style="display:block; color:var(--text-dim); margin-top:.45rem;">
+            Al elegir una foto desde tu celular, el navegador puede pedir permiso para usar la cámara.
+          </small>
 
           <div style="display: none;">
             {{ form.file }}
           </div>
         </div>
+        <button type="button" class="btn btn-secondary camera-upload-button" id="open-camera-button">
+          Usar cámara
+        </button>
         {% if form.file.errors %}
           <small style="color: var(--accent);">{{ form.file.errors.0 }}</small>
         {% endif %}
@@ -78,16 +84,23 @@
 
       <!-- Location -->
       <div class="form-group">
-        <label class="form-label" for="{{ form.location.id_for_label }}">Ubicación o Lugar</label>
+        <label class="form-label" for="{{ form.location.id_for_label }}">Dirección o lugar</label>
         {{ form.location }}
+        <small style="display:block; color:var(--text-dim); margin-top:.3rem;">Guarda la dirección para volver a encontrar este recuerdo cuando regreses.</small>
       </div>
 
       <!-- Tag Friends -->
       <div class="form-group">
         <label class="form-label" for="{{ form.tagged_friends.id_for_label }}">Etiquetar Amigos presentes en el recuerdo</label>
-        {{ form.tagged_friends }}
+        <input type="search" id="friend-search" class="form-input friend-search" placeholder="Buscar amigo por nombre..." autocomplete="off">
+        <div id="friend-suggestions" class="friend-suggestions" role="listbox" aria-label="Amigos encontrados"></div>
+        <div class="friend-selector-hidden">
+          {{ form.tagged_friends }}
+        </div>
+        <small id="friend-search-empty" class="friend-search-empty" hidden>No encontramos un amigo con ese nombre.</small>
+        <div id="selected-friends" class="selected-friends" aria-live="polite"></div>
         <small style="display: block; color: var(--text-dim); font-size: 0.78rem; margin-top: 0.3rem;">
-          Mantén presionado Ctrl (o Cmd en Mac) para seleccionar varios amigos.
+          Escribe un nombre para encontrarlo. Mantén presionado Ctrl (o Cmd en Mac) para seleccionar varios amigos.
         </small>
       </div>
 
@@ -111,10 +124,15 @@
 {% block extra_js %}
 <script>
   const fileInput = document.getElementById('id_file');
+  const dropZone = document.getElementById('drop-zone');
   const imgPreview = document.getElementById('img-preview');
   const videoPreview = document.getElementById('video-preview');
   const previewContainer = document.getElementById('preview-container');
   const uploadPrompt = document.getElementById('upload-prompt');
+  const cameraButton = document.getElementById('open-camera-button');
+  const friendSearch = document.getElementById('friend-search');
+  const friendSelector = document.getElementById('{{ form.tagged_friends.id_for_label }}');
+  const friendSearchEmpty = document.getElementById('friend-search-empty');
 
   fileInput.addEventListener('change', function() {
     const file = this.files[0];
@@ -134,6 +152,103 @@
         uploadPrompt.innerHTML = `<p style="color:#a5b4fc; font-size:0.85rem; margin-top:0.5rem;">Video seleccionado: ${file.name} (clic para cambiar)</p>`;
       }
     }
+  });
+
+  cameraButton.addEventListener('click', async function(event) {
+    event.stopPropagation();
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      fileInput.click();
+      return;
+    }
+
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({video: {facingMode: 'environment'}});
+      const video = document.createElement('video');
+      video.autoplay = true;
+      video.playsInline = true;
+      video.srcObject = stream;
+      video.style.cssText = 'width:100%;max-height:260px;border-radius:12px;margin-top:12px;';
+      dropZone.appendChild(video);
+
+      const captureButton = document.createElement('button');
+      captureButton.type = 'button';
+      captureButton.className = 'btn btn-primary btn-sm';
+      captureButton.textContent = 'Tomar foto';
+      dropZone.appendChild(captureButton);
+      captureButton.addEventListener('click', function() {
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        canvas.toBlob(function(blob) {
+          const capturedFile = new File([blob], 'foto-camara.jpg', {type: 'image/jpeg'});
+          const transfer = new DataTransfer();
+          transfer.items.add(capturedFile);
+          fileInput.files = transfer.files;
+          fileInput.dispatchEvent(new Event('change', {bubbles: true}));
+          stream.getTracks().forEach(track => track.stop());
+          video.remove();
+          captureButton.remove();
+        }, 'image/jpeg', 0.9);
+      });
+    } catch (error) {
+      alert('No se pudo acceder a la cámara. Revisa el permiso del navegador o selecciona un archivo.');
+    }
+  });
+
+  const friendSuggestions = document.getElementById('friend-suggestions');
+  const selectedFriends = document.getElementById('selected-friends');
+
+  function renderSelectedFriends() {
+    selectedFriends.innerHTML = '';
+    Array.from(friendSelector.selectedOptions).forEach(function(option) {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'selected-friend-chip';
+      chip.textContent = `${option.textContent} ×`;
+      chip.addEventListener('click', function() {
+        option.selected = false;
+        renderSelectedFriends();
+      });
+      selectedFriends.appendChild(chip);
+    });
+  }
+
+  friendSearch.addEventListener('input', function() {
+    const searchTerm = this.value.trim().toLocaleLowerCase();
+    friendSuggestions.innerHTML = '';
+    friendSearchEmpty.hidden = true;
+
+    if (!searchTerm) {
+      return;
+    }
+
+    const matches = Array.from(friendSelector.options).filter(function(option) {
+      return option.textContent.toLocaleLowerCase().includes(searchTerm);
+    });
+
+    if (!matches.length) {
+      friendSearchEmpty.hidden = false;
+      return;
+    }
+
+    matches.forEach(function(option) {
+      const suggestion = document.createElement('button');
+      suggestion.type = 'button';
+      suggestion.className = 'friend-suggestion';
+      suggestion.setAttribute('role', 'option');
+      suggestion.textContent = option.textContent;
+      suggestion.setAttribute('aria-selected', option.selected);
+      suggestion.addEventListener('click', function() {
+        option.selected = !option.selected;
+        renderSelectedFriends();
+        friendSearch.value = '';
+        friendSuggestions.innerHTML = '';
+        friendSearch.focus();
+      });
+      friendSuggestions.appendChild(suggestion);
+    });
   });
 </script>
 {% endblock %}

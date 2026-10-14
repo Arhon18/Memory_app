@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import User
 from .forms import RegisterForm, LoginForm, ProfileEditForm
-from friends.models import FriendRequest
+from friends.models import FriendRequest, Follow
 from memories.models import Memory
 
 
@@ -63,22 +63,42 @@ def profile_view(request, user_id):
     friends_count = friends.count()
 
     # Si es el propio usuario o es amigo, ve los recuerdos
-    can_view_content = is_self or is_friend
+    is_following = Follow.objects.filter(follower=request.user, following=profile_user).exists()
+    can_view_content = is_self or is_friend or profile_user.profile_privacy == User.PRIVACY_PUBLIC
     user_memories = []
     
     if can_view_content:
         user_memories = Memory.objects.filter(author=profile_user, group__isnull=True).select_related('author').prefetch_related('likes', 'comments')
+    map_memories = [
+        {
+            'id': memory.id,
+            'title': memory.title or 'Recuerdo',
+            'location': memory.location,
+            'latitude': float(memory.latitude),
+            'longitude': float(memory.longitude),
+        }
+        for memory in user_memories
+        if memory.location and memory.latitude is not None and memory.longitude is not None
+    ]
+    memories_without_coordinates = [
+        memory for memory in user_memories
+        if memory.location and (memory.latitude is None or memory.longitude is None)
+    ]
 
     context = {
         'profile_user': profile_user,
         'is_self': is_self,
         'is_friend': is_friend,
+        'is_following': is_following,
+        'profile_is_public': profile_user.profile_privacy == User.PRIVACY_PUBLIC,
         'relationship_status': relationship_status,
         'friends': friends[:6],
         'friends_count': friends_count,
         'can_view_content': can_view_content,
         'memories': user_memories,
         'memories_count': Memory.objects.filter(author=profile_user).count(),
+        'map_memories': map_memories,
+        'memories_without_coordinates': memories_without_coordinates,
     }
     return render(request, 'accounts/profile.html', context)
 
@@ -90,8 +110,22 @@ def edit_profile_view(request):
         if form.is_valid():
             form.save()
             messages.success(request, 'Tu perfil se ha actualizado correctamente.')
-            return redirect('accounts:profile', user_id=request.user.id)
+            return redirect('accounts:settings')
     else:
         form = ProfileEditForm(instance=request.user)
 
     return render(request, 'accounts/edit_profile.html', {'form': form})
+
+
+@login_required
+def account_settings_view(request):
+    if request.method == 'POST':
+        form = ProfileEditForm(request.POST, request.FILES, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Tus datos de cuenta se actualizaron correctamente.')
+            return redirect('accounts:settings')
+    else:
+        form = ProfileEditForm(instance=request.user)
+
+    return render(request, 'accounts/settings.html', {'form': form})

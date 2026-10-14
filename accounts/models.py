@@ -39,6 +39,18 @@ class User(AbstractUser):
     avatar = models.ImageField('Foto de Perfil', upload_to='avatars/', blank=True, null=True)
     cover_image = models.ImageField('Portada', upload_to='covers/', blank=True, null=True)
     birth_date = models.DateField('Fecha de Nacimiento', blank=True, null=True)
+    PRIVACY_PRIVATE = 'private'
+    PRIVACY_PUBLIC = 'public'
+    PRIVACY_CHOICES = [
+        (PRIVACY_PRIVATE, 'Perfil privado'),
+        (PRIVACY_PUBLIC, 'Perfil público'),
+    ]
+    profile_privacy = models.CharField(
+        'Privacidad del perfil',
+        max_length=10,
+        choices=PRIVACY_CHOICES,
+        default=PRIVACY_PRIVATE,
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
