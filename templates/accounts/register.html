@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Crear Cuenta - Memory{% endblock %}
+
+{% block content %}
+<div style="min-height: 85vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem 0;">
+  <div class="glass-panel" style="width: 100%; max-width: 540px; padding: 2.5rem;">
+    
+    <div style="text-align: center; margin-bottom: 2rem;">
+      <div class="brand-icon" style="margin: 0 auto 1.2rem; width: 48px; height: 48px; border-radius: 14px;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <line x1="19" y1="8" x2="19" y2="14"></line>
+          <line x1="22" y1="11" x2="16" y2="11"></line>
+        </svg>
+      </div>
+      <h1 style="font-family: var(--font-display); font-size: 1.8rem; margin-bottom: 0.4rem;">Crea tu cuenta en Memory</h1>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">Tu espacio seguro para compartir fotos, videos y recuerdos con tus amigos.</p>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" id="register-form">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-error">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label class="form-label" for="{{ form.first_name.id_for_label }}">Nombre *</label>
+          {{ form.first_name }}
+          {% if form.first_name.errors %}
+            <small style="color: var(--accent);">{{ form.first_name.errors.0 }}</small>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="{{ form.last_name.id_for_label }}">Apellido *</label>
+          {{ form.last_name }}
+          {% if form.last_name.errors %}
+            <small style="color: var(--accent);">{{ form.last_name.errors.0 }}</small>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.email.id_for_label }}">Correo Electrónico (Único) *</label>
+        {{ form.email }}
+        {% if form.email.errors %}
+          <small style="color: var(--accent);">{{ form.email.errors.0 }}</small>
+        {% endif %}
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label class="form-label" for="{{ form.password.id_for_label }}">Contraseña *</label>
+          {{ form.password }}
+          {% if form.password.errors %}
+            <small style="color: var(--accent);">{{ form.password.errors.0 }}</small>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="{{ form.password_confirm.id_for_label }}">Confirmar Contraseña *</label>
+          {{ form.password_confirm }}
+          {% if form.password_confirm.errors %}
+            <small style="color: var(--accent);">{{ form.password_confirm.errors.0 }}</small>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.avatar.id_for_label }}">Foto de Perfil (Opcional)</label>
+        {{ form.avatar }}
+        {% if form.avatar.errors %}
+          <small style="color: var(--accent);">{{ form.avatar.errors.0 }}</small>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.bio.id_for_label }}">Biografía Corta (Opcional)</label>
+        {{ form.bio }}
+        {% if form.bio.errors %}
+          <small style="color: var(--accent);">{{ form.bio.errors.0 }}</small>
+        {% endif %}
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.9rem; margin-top: 0.5rem;" id="register-submit-btn">
+        Crear Mi Cuenta
+      </button>
+    </form>
+
+    <div style="margin-top: 1.8rem; padding-top: 1.2rem; border-top: 1px solid var(--border-subtle); text-align: center; font-size: 0.9rem; color: var(--text-muted);">
+      ¿Ya tienes una cuenta? 
+      <a href="{% url 'accounts:login' %}" style="color: #a5b4fc; font-weight: 600; text-decoration: underline;" id="link-login">Inicia sesión</a>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

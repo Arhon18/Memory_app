@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Grupos de Recuerdos - Memory{% endblock %}
+
+{% block content %}
+<div style="max-width: 950px; margin: 0 auto;">
+
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h1 style="font-family: var(--font-display); font-size: 1.8rem; margin-bottom: 0.3rem;">Grupos y Álbumes Compartidos</h1>
+      <p style="color: var(--text-muted); font-size: 0.92rem;">Espacios colaborativos donde tú y tus amigos suben fotos y videos en conjunto.</p>
+    </div>
+    <a href="{% url 'groups:create' %}" class="btn btn-primary" id="btn-create-group">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      <span>Crear Nuevo Grupo</span>
+    </a>
+  </div>
+
+  {% if groups %}
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
+      {% for group in groups %}
+        <div class="glass-panel" style="overflow: hidden; display: flex; flex-direction: column;">
+          <!-- Cover -->
+          <div style="height: 140px; background-image: url('{{ group.cover_url }}'); background-size: cover; background-position: center; position: relative;">
+            <div style="position: absolute; inset: 0; background: linear-gradient(180deg, transparent 40%, rgba(9,13,22,0.9) 100%);"></div>
+            <span style="position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); padding: 0.2rem 0.6rem; border-radius: var(--radius-full); font-size: 0.75rem; color: #a5b4fc; font-weight: 600;">
+              {{ group.members.count }} miembro{{ group.members.count|pluralize:"s" }}
+            </span>
+          </div>
+
+          <!-- Body -->
+          <div style="padding: 1.25rem; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <h3 style="font-family: var(--font-display); font-size: 1.2rem; margin-bottom: 0.35rem; color: var(--text-main);">
+                {{ group.name }}
+              </h3>
+              {% if group.description %}
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.4;">
+                  {{ group.description|truncatechars:85 }}
+                </p>
+              {% endif %}
+            </div>
+
+            <div>
+              <!-- Stats -->
+              <div style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 1rem;">
+                📸 {{ group.memories.count }} fotos y videos subidos en conjunto
+              </div>
+
+              <!-- Buttons -->
+              <div style="display: flex; gap: 0.5rem;">
+                <a href="{% url 'groups:detail' group_id=group.id %}" class="btn btn-primary btn-sm" style="flex: 1;">
+                  Abrir Álbum
+                </a>
+                <a href="{% url 'memories:create_group_memory' group_id=group.id %}" class="btn btn-secondary btn-sm" title="Subir foto o video">
+                  + Subir
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <!-- Empty Groups State -->
+    <div class="glass-panel" style="padding: 4rem 2rem; text-align: center;">
+      <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(168, 85, 247, 0.15); display: inline-flex; align-items: center; justify-content: center; color: var(--secondary); margin-bottom: 1.25rem;">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+      </div>
+      <h3 style="font-family: var(--font-display); font-size: 1.4rem; margin-bottom: 0.5rem;">Crea tu primer grupo con amigos</h3>
+      <p style="color: var(--text-muted); max-width: 440px; margin: 0 auto 1.75rem; font-size: 0.92rem;">
+        ¿Un viaje? ¿Un festival? ¿O el grupo de siempre? Crea un álbum grupal donde todos puedan subir sus fotos y videos al mismo lugar.
+      </p>
+      <a href="{% url 'groups:create' %}" class="btn btn-primary">Crear Grupo de Amigos</a>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

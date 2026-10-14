@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Subir Nuevo Recuerdo - Memory{% endblock %}
+
+{% block content %}
+<div style="max-width: 650px; margin: 0 auto;">
+
+  <div class="glass-panel" style="padding: 2.5rem;">
+    
+    <div style="margin-bottom: 2rem;">
+      <h1 style="font-family: var(--font-display); font-size: 1.8rem; margin-bottom: 0.4rem;">
+        {% if group %}
+          Subir Recuerdo a "{{ group.name }}"
+        {% else %}
+          Crear Nuevo Recuerdo
+        {% endif %}
+      </h1>
+      <p style="color: var(--text-muted); font-size: 0.92rem;">
+        {% if group %}
+          Este recuerdo estará disponible para todos los miembros del grupo.
+        {% else %}
+          Comparte una foto o video con tus amigos. Solo las personas que tengas como amigos podrán verlo.
+        {% endif %}
+      </p>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" id="memory-upload-form">
+      {% csrf_token %}
+
+      <!-- Media File Upload with interactive preview -->
+      <div class="form-group">
+        <label class="form-label" style="font-weight: 700;">Foto o Video *</label>
+        <div id="drop-zone" style="border: 2px dashed rgba(255, 255, 255, 0.18); border-radius: var(--radius-md); padding: 2rem; text-align: center; cursor: pointer; transition: all 0.2s;" onclick="document.getElementById('id_file').click()">
+          <div id="preview-container" style="display: none; margin-bottom: 1rem;">
+            <img id="img-preview" src="#" alt="Vista previa" style="max-height: 280px; max-width: 100%; border-radius: var(--radius-md); display: none; margin: 0 auto;">
+            <video id="video-preview" controls style="max-height: 280px; max-width: 100%; border-radius: var(--radius-md); display: none; margin: 0 auto;"></video>
+          </div>
+
+          <div id="upload-prompt">
+            <div style="width: 52px; height: 52px; border-radius: 50%; background: rgba(99, 102, 241, 0.15); display: inline-flex; align-items: center; justify-content: center; color: #a5b4fc; margin-bottom: 0.75rem;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            </div>
+            <p style="font-weight: 600; color: var(--text-main); font-size: 0.95rem; margin-bottom: 0.2rem;">
+              Haz clic para seleccionar tu foto o video
+            </p>
+            <p style="color: var(--text-dim); font-size: 0.8rem;">
+              Soporta JPG, PNG, WEBP, MP4, MOV, WEBM
+            </p>
+          </div>
+
+          <div style="display: none;">
+            {{ form.file }}
+          </div>
+        </div>
+        {% if form.file.errors %}
+          <small style="color: var(--accent);">{{ form.file.errors.0 }}</small>
+        {% endif %}
+      </div>
+
+      <!-- Title / Moment -->
+      <div class="form-group">
+        <label class="form-label" for="{{ form.title.id_for_label }}">Título del Recuerdo</label>
+        {{ form.title }}
+        {% if form.title.errors %}
+          <small style="color: var(--accent);">{{ form.title.errors.0 }}</small>
+        {% endif %}
+      </div>
+
+      <!-- Description / Story -->
+      <div class="form-group">
+        <label class="form-label" for="{{ form.description.id_for_label }}">Historia o Anécdota</label>
+        {{ form.description }}
+        {% if form.description.errors %}
+          <small style="color: var(--accent);">{{ form.description.errors.0 }}</small>
+        {% endif %}
+      </div>
+
+      <!-- Location -->
+      <div class="form-group">
+        <label class="form-label" for="{{ form.location.id_for_label }}">Ubicación o Lugar</label>
+        {{ form.location }}
+      </div>
+
+      <!-- Tag Friends -->
+      <div class="form-group">
+        <label class="form-label" for="{{ form.tagged_friends.id_for_label }}">Etiquetar Amigos presentes en el recuerdo</label>
+        {{ form.tagged_friends }}
+        <small style="display: block; color: var(--text-dim); font-size: 0.78rem; margin-top: 0.3rem;">
+          Mantén presionado Ctrl (o Cmd en Mac) para seleccionar varios amigos.
+        </small>
+      </div>
+
+      <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+        <button type="submit" class="btn btn-primary" style="flex: 1; padding: 0.85rem;" id="submit-memory-btn">
+          Publicar Recuerdo
+        </button>
+        {% if group %}
+          <a href="{% url 'groups:detail' group_id=group.id %}" class="btn btn-secondary">Cancelar</a>
+        {% else %}
+          <a href="{% url 'memories:feed' %}" class="btn btn-secondary">Cancelar</a>
+        {% endif %}
+      </div>
+
+    </form>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const fileInput = document.getElementById('id_file');
+  const imgPreview = document.getElementById('img-preview');
+  const videoPreview = document.getElementById('video-preview');
+  const previewContainer = document.getElementById('preview-container');
+  const uploadPrompt = document.getElementById('upload-prompt');
+
+  fileInput.addEventListener('change', function() {
+    const file = this.files[0];
+    if (file) {
+      const fileType = file.type;
+      previewContainer.style.display = 'block';
+
+      if (fileType.startsWith('image/')) {
+        imgPreview.src = URL.createObjectURL(file);
+        imgPreview.style.display = 'block';
+        videoPreview.style.display = 'none';
+        uploadPrompt.innerHTML = `<p style="color:#a5b4fc; font-size:0.85rem; margin-top:0.5rem;">Foto seleccionada: ${file.name} (clic para cambiar)</p>`;
+      } else if (fileType.startsWith('video/')) {
+        videoPreview.src = URL.createObjectURL(file);
+        videoPreview.style.display = 'block';
+        imgPreview.style.display = 'none';
+        uploadPrompt.innerHTML = `<p style="color:#a5b4fc; font-size:0.85rem; margin-top:0.5rem;">Video seleccionado: ${file.name} (clic para cambiar)</p>`;
+      }
+    }
+  });
+</script>
+{% endblock %}

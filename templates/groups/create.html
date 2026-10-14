@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Crear Grupo de Amigos - Memory{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+
+  <div class="glass-panel" style="padding: 2.5rem;">
+    <h1 style="font-family: var(--font-display); font-size: 1.8rem; margin-bottom: 0.4rem;">Crear Grupo de Amigos</h1>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin-bottom: 2rem;">
+      Un espacio compartido donde tú y tus amigos podrán subir fotos y videos en conjunto.
+    </p>
+
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.name.id_for_label }}">Nombre del Grupo o Álbum *</label>
+        {{ form.name }}
+        {% if form.name.errors %}
+          <small style="color: var(--accent);">{{ form.name.errors.0 }}</small>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.description.id_for_label }}">Descripción</label>
+        {{ form.description }}
+        {% if form.description.errors %}
+          <small style="color: var(--accent);">{{ form.description.errors.0 }}</small>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.cover_image.id_for_label }}">Foto de Portada del Grupo</label>
+        {{ form.cover_image }}
+      </div>
+
+      <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+        <button type="submit" class="btn btn-primary" style="flex: 1; padding: 0.85rem;" id="create-group-btn">
+          Crear Grupo
+        </button>
+        <a href="{% url 'groups:list' %}" class="btn btn-secondary">Cancelar</a>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

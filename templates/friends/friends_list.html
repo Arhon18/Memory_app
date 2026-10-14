@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Amigos de {{ target_user.first_name }} - Memory{% endblock %}
+
+{% block content %}
+<div style="max-width: 850px; margin: 0 auto;">
+
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <div>
+      <h1 style="font-family: var(--font-display); font-size: 1.8rem; margin-bottom: 0.3rem;">
+        {% if is_self %}Mis Amigos{% else %}Amigos de {{ target_user.get_full_name }}{% endif %}
+      </h1>
+      <p style="color: var(--text-muted); font-size: 0.92rem;">
+        {{ friends.count }} persona{{ friends.count|pluralize:"s" }} conectada{{ friends.count|pluralize:"s" }}
+      </p>
+    </div>
+    <a href="{% url 'friends:search' %}" class="btn btn-primary btn-sm">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <span>Buscar Amigos</span>
+    </a>
+  </div>
+
+  {% if friends %}
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.25rem;">
+      {% for friend in friends %}
+        <div class="glass-panel" style="padding: 1.25rem; display: flex; flex-direction: column; align-items: center; text-align: center;">
+          <a href="{% url 'accounts:profile' user_id=friend.id %}">
+            <img src="{{ friend.avatar_url }}" alt="{{ friend.get_full_name }}" class="user-avatar-sm" style="width: 70px; height: 70px; margin-bottom: 0.75rem;">
+          </a>
+          <a href="{% url 'accounts:profile' user_id=friend.id %}" style="font-weight: 700; font-size: 1.05rem; color: var(--text-main); margin-bottom: 0.2rem;">
+            {{ friend.get_full_name }}
+          </a>
+          <span style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 1rem;">
+            {{ friend.memories.count }} recuerdo{{ friend.memories.count|pluralize:"s" }}
+          </span>
+
+          <div style="display: flex; gap: 0.5rem; width: 100%;">
+            <a href="{% url 'chat:start_chat' user_id=friend.id %}" class="btn btn-primary btn-sm" style="flex: 1;">
+              Mensaje
+            </a>
+            <a href="{% url 'accounts:profile' user_id=friend.id %}" class="btn btn-secondary btn-sm">
+              Perfil
+            </a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="glass-panel" style="padding: 3rem; text-align: center;">
+      <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Aún no hay amigos en esta lista.</p>
+      <a href="{% url 'friends:search' %}" class="btn btn-primary btn-sm">Encontrar Amigos</a>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

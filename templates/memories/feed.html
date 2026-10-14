@@ -1,0 +1,286 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Feed de Recuerdos - Memory{% endblock %}
+
+{% block content %}
+<div class="grid-layout">
+
+  <!-- Left Sidebar: Profile Summary & Fast Shortcuts -->
+  <aside class="sidebar-left">
+    <div class="glass-panel" style="padding: 1.5rem; text-align: center; margin-bottom: 1.5rem;">
+      <a href="{% url 'accounts:profile' user_id=user.id %}">
+        <img src="{{ user.avatar_url }}" alt="{{ user.first_name }}" class="user-avatar-sm" style="width: 72px; height: 72px; margin-bottom: 0.8rem; border-width: 3px;">
+      </a>
+      <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.2rem;">
+        <a href="{% url 'accounts:profile' user_id=user.id %}">{{ user.get_full_name }}</a>
+      </h3>
+      <p style="color: var(--text-dim); font-size: 0.82rem; margin-bottom: 1.2rem;">{{ user.email }}</p>
+
+      <div style="display: flex; justify-content: space-around; border-top: 1px solid var(--border-subtle); padding-top: 1rem; font-size: 0.85rem; color: var(--text-muted);">
+        <div>
+          <strong style="display:block; color:var(--text-main); font-size: 1.1rem;">{{ user.memories.count }}</strong>
+          Recuerdos
+        </div>
+        <div>
+          <strong style="display:block; color:var(--text-main); font-size: 1.1rem;">{{ friends|length }}</strong>
+          Amigos
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Navigation -->
+    <div class="glass-panel" style="padding: 1rem;">
+      <a href="{% url 'memories:create' %}" class="btn btn-primary" style="width: 100%; margin-bottom: 0.75rem;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        <span>Nuevo Recuerdo</span>
+      </a>
+      <a href="{% url 'groups:create' %}" class="btn btn-secondary" style="width: 100%;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" y1="8" x2="19" y2="14"></line><line x1="22" y1="11" x2="16" y2="11"></line></svg>
+        <span>Crear Grupo</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Central Feed: Stories Rail + Memories Cards -->
+  <section class="main-feed">
+    
+    <!-- Amigos Conectados / Historias bar -->
+    {% if friends %}
+      <div class="glass-panel" style="padding: 1rem 1.25rem; margin-bottom: 1.5rem;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem;">
+          <span style="font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim);">Tus Amigos</span>
+          <a href="{% url 'friends:my_friends' %}" style="font-size: 0.8rem; color: #a5b4fc;">Ver todos</a>
+        </div>
+        <div class="friends-rail">
+          {% for friend in friends %}
+            <a href="{% url 'accounts:profile' user_id=friend.id %}" class="friends-rail-item">
+              <div class="rail-avatar-ring">
+                <img src="{{ friend.avatar_url }}" alt="{{ friend.first_name }}" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; display: block; border: 2px solid var(--bg-dark);">
+              </div>
+              <span>{{ friend.first_name }}</span>
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Create Memory Prompt Bar -->
+    <div class="glass-panel" style="padding: 1rem 1.25rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem;">
+      <img src="{{ user.avatar_url }}" alt="{{ user.first_name }}" class="user-avatar-sm" style="width: 42px; height: 42px;">
+      <a href="{% url 'memories:create' %}" style="flex: 1; background: var(--bg-input); border: 1px solid var(--border-subtle); border-radius: var(--radius-full); padding: 0.65rem 1.2rem; color: var(--text-dim); font-size: 0.92rem; display: flex; align-items: center; gap: 0.5rem; transition: border-color 0.2s;" onmouseover="this.style.borderColor='var(--border-focus)'" onmouseout="this.style.borderColor='var(--border-subtle)'">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+        <span>¿Qué momento especial quieres compartir con tus amigos hoy?</span>
+      </a>
+      <a href="{% url 'memories:create' %}" class="btn btn-primary btn-sm" style="padding: 0.6rem 1rem;">
+        Subir
+      </a>
+    </div>
+
+    <!-- Feed Items -->
+    {% if memories %}
+      {% for memory in memories %}
+        <article class="glass-panel memory-card" id="memory-{{ memory.id }}">
+          <!-- Author Header -->
+          <div class="memory-header">
+            <div class="memory-author">
+              <a href="{% url 'accounts:profile' user_id=memory.author.id %}">
+                <img src="{{ memory.author.avatar_url }}" alt="{{ memory.author.first_name }}" class="user-avatar-sm" style="width: 44px; height: 44px;">
+              </a>
+              <div class="author-meta">
+                <h4>
+                  <a href="{% url 'accounts:profile' user_id=memory.author.id %}">{{ memory.author.get_full_name }}</a>
+                  {% if memory.group %}
+                    <span style="font-weight: 400; color: var(--text-dim); font-size: 0.85rem;">
+                      en <a href="{% url 'groups:detail' group_id=memory.group.id %}" style="color: #a5b4fc; font-weight: 600;">{{ memory.group.name }}</a>
+                    </span>
+                  {% endif %}
+                </h4>
+                <p>
+                  {{ memory.created_at|timesince }} atrás
+                  {% if memory.location %} &bull; 📍 {{ memory.location }}{% endif %}
+                </p>
+              </div>
+            </div>
+
+            <!-- More / Options -->
+            {% if memory.author == user or memory.group and memory.group.is_admin %}
+              <a href="{% url 'memories:delete' memory_id=memory.id %}" onclick="return confirm('¿Seguro que deseas eliminar este recuerdo?');" style="color: var(--text-dim); font-size: 0.82rem; padding: 0.3rem 0.6rem;" title="Eliminar">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              </a>
+            {% endif %}
+          </div>
+
+          <!-- Media: Foto o Video -->
+          <div class="memory-media-container">
+            {% if memory.is_video %}
+              <video class="memory-media-video" controls playsinline preload="metadata">
+                <source src="{{ memory.file.url }}" type="video/mp4">
+                Tu navegador no soporta el formato de video.
+              </video>
+            {% else %}
+              <img src="{{ memory.file.url }}" alt="{{ memory.title|default:'Recuerdo' }}" class="memory-media-img" loading="lazy">
+            {% endif %}
+          </div>
+
+          <!-- Memory Content -->
+          <div class="memory-content">
+            {% if memory.title %}
+              <h3 class="memory-title">{{ memory.title }}</h3>
+            {% endif %}
+
+            {% if memory.description %}
+              <p class="memory-desc">{{ memory.description }}</p>
+            {% endif %}
+
+            <!-- Tagged Friends -->
+            {% if memory.tagged_friends.exists %}
+              <div class="memory-tags">
+                <span style="font-size: 0.78rem; color: var(--text-dim); align-self: center;">Con:</span>
+                {% for friend in memory.tagged_friends.all %}
+                  <a href="{% url 'accounts:profile' user_id=friend.id %}" class="friend-badge">
+                    <img src="{{ friend.avatar_url }}" style="width: 14px; height: 14px; border-radius: 50%;">
+                    <span>{{ friend.first_name }}</span>
+                  </a>
+                {% endfor %}
+              </div>
+            {% endif %}
+
+            <!-- Interaction Buttons -->
+            <div class="memory-actions">
+              <!-- Like button -->
+              <button class="action-btn {% if memory.id in user_liked_memory_ids %}liked{% endif %}" onclick="toggleLike({{ memory.id }}, this)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                </svg>
+                <span class="like-count">{{ memory.likes_count }}</span> Me gusta
+              </button>
+
+              <!-- Comments link -->
+              <a href="{% url 'memories:detail' memory_id=memory.id %}" class="action-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <span>{{ memory.comments_count }} Comentarios</span>
+              </a>
+
+              <a href="{% url 'memories:detail' memory_id=memory.id %}" class="action-btn" style="margin-left: auto;" title="Ver Detalle">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+              </a>
+            </div>
+
+            <!-- Recent Comments Preview -->
+            {% if memory.comments.all %}
+              <div style="margin-top: 1rem; padding-top: 0.8rem; border-top: 1px solid rgba(255,255,255,0.04); display: flex; flex-direction: column; gap: 0.5rem;">
+                {% for comment in memory.comments.all|slice:":2" %}
+                  <div style="font-size: 0.85rem;">
+                    <a href="{% url 'accounts:profile' user_id=comment.author.id %}" style="font-weight: 700; color: var(--text-main); margin-right: 0.4rem;">
+                      {{ comment.author.first_name }}:
+                    </a>
+                    <span style="color: var(--text-muted);">{{ comment.content }}</span>
+                  </div>
+                {% endfor %}
+                {% if memory.comments.count > 2 %}
+                  <a href="{% url 'memories:detail' memory_id=memory.id %}" style="font-size: 0.8rem; color: #a5b4fc;">
+                    Ver los {{ memory.comments.count }} comentarios...
+                  </a>
+                {% endif %}
+              </div>
+            {% endif %}
+
+            <!-- Quick Comment Form -->
+            <form action="{% url 'memories:comment' memory_id=memory.id %}" method="post" style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+              {% csrf_token %}
+              {{ comment_form.content }}
+              <button type="submit" class="btn btn-primary btn-sm" style="padding: 0.5rem 0.9rem;">Publicar</button>
+            </form>
+
+          </div>
+        </article>
+      {% endfor %}
+    {% else %}
+      <!-- Empty Feed State -->
+      <div class="glass-panel" style="padding: 4rem 2rem; text-align: center;">
+        <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(99, 102, 241, 0.12); display: inline-flex; align-items: center; justify-content: center; color: var(--primary); margin-bottom: 1.25rem;">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+        </div>
+        <h3 style="font-family: var(--font-display); font-size: 1.4rem; margin-bottom: 0.5rem;">Tu feed está esperando recuerdos</h3>
+        <p style="color: var(--text-muted); max-width: 420px; margin: 0 auto 1.5rem; font-size: 0.92rem;">
+          Sube tus primeras fotos o videos, añade a tus amigos o crea un grupo para comenzar a guardar momentos especiales juntos.
+        </p>
+        <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+          <a href="{% url 'memories:create' %}" class="btn btn-primary">Subir Foto o Video</a>
+          <a href="{% url 'friends:search' %}" class="btn btn-secondary">Buscar Amigos</a>
+        </div>
+      </div>
+    {% endif %}
+
+  </section>
+
+  <!-- Right Sidebar: Groups & Friend Suggestions -->
+  <aside class="sidebar-right">
+    <!-- Tus Grupos Compartidos -->
+    <div class="glass-panel" style="padding: 1.25rem; margin-bottom: 1.5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-main);">Tus Grupos</h4>
+        <a href="{% url 'groups:list' %}" style="font-size: 0.8rem; color: #a5b4fc;">Ver todos</a>
+      </div>
+
+      {% if user_groups %}
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+          {% for g in user_groups %}
+            <a href="{% url 'groups:detail' group_id=g.id %}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem; border-radius: var(--radius-sm); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.04)'" onmouseout="this.style.background='transparent'">
+              <img src="{{ g.cover_url }}" style="width: 38px; height: 38px; border-radius: 8px; object-fit: cover;">
+              <div style="overflow: hidden;">
+                <strong style="display: block; font-size: 0.88rem; color: var(--text-main); text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">{{ g.name }}</strong>
+                <span style="font-size: 0.75rem; color: var(--text-dim);">{{ g.members.count }} miembros</span>
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">Aún no eres miembro de ningún grupo colaborativo.</p>
+        <a href="{% url 'groups:create' %}" class="btn btn-secondary btn-sm" style="width: 100%;">Crear Grupo</a>
+      {% endif %}
+    </div>
+
+    <!-- Sugerencia para chatear en privado -->
+    <div class="glass-panel" style="padding: 1.25rem; background: var(--gradient-subtle); border-color: rgba(168, 85, 247, 0.25);">
+      <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.4rem; color: var(--text-main);">Chat Privado</h4>
+      <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1rem;">
+        Habla en tiempo real y comparte momentos secretos con tus amigos de forma privada.
+      </p>
+      <a href="{% url 'chat:inbox' %}" class="btn btn-primary btn-sm" style="width: 100%;">
+        Abrir Mensajes
+      </a>
+    </div>
+  </aside>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Toggle AJAX Like
+  function toggleLike(memoryId, buttonEl) {
+    fetch(`/memories/${memoryId}/like/`, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': getCookie('csrftoken'),
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    .then(res => res.json())
+    .then(data => {
+      const countSpan = buttonEl.querySelector('.like-count');
+      if (data.liked) {
+        buttonEl.classList.add('liked');
+      } else {
+        buttonEl.classList.remove('liked');
+      }
+      countSpan.textContent = data.likes_count;
+    })
+    .catch(err => console.error('Error toggling like:', err));
+  }
+</script>
+{% endblock %}

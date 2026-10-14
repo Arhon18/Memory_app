@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mensajes Privados - Memory{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+
+  <div style="margin-bottom: 1.5rem;">
+    <h1 style="font-family: var(--font-display); font-size: 1.8rem; margin-bottom: 0.3rem;">Chat Privado</h1>
+    <p style="color: var(--text-muted); font-size: 0.92rem;">Conversaciones directas y seguras exclusivamente con tus amigos.</p>
+  </div>
+
+  <div class="glass-panel" style="overflow: hidden; display: grid; grid-template-columns: 320px 1fr; min-height: 550px;">
+    
+    <!-- Conversations List -->
+    <div style="border-right: 1px solid var(--border-subtle); display: flex; flex-direction: column;">
+      <div style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-subtle); font-weight: 700; font-size: 0.95rem;">
+        Tus Conversaciones
+      </div>
+
+      <div style="flex: 1; overflow-y: auto;">
+        {% if conversation_data %}
+          {% for item in conversation_data %}
+            <a href="{% url 'chat:conversation' conversation_id=item.conversation.id %}" style="display: flex; align-items: center; gap: 0.85rem; padding: 0.9rem 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
+              <div style="position: relative;">
+                <img src="{{ item.other_user.avatar_url }}" alt="{{ item.other_user.first_name }}" class="user-avatar-sm" style="width: 44px; height: 44px;">
+                {% if item.unread_count > 0 %}
+                  <span style="position: absolute; top: -2px; right: -2px; background: var(--accent); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.7rem; font-weight: 700; display: flex; align-items: center; justify-content: center;">{{ item.unread_count }}</span>
+                {% endif %}
+              </div>
+
+              <div style="flex: 1; overflow: hidden;">
+                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.2rem;">
+                  <strong style="color: var(--text-main); font-size: 0.92rem;">{{ item.other_user.get_full_name }}</strong>
+                  {% if item.last_message %}
+                    <span style="font-size: 0.72rem; color: var(--text-dim);">{{ item.last_message.created_at|date:"H:i" }}</span>
+                  {% endif %}
+                </div>
+
+                <p style="color: var(--text-muted); font-size: 0.82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0;">
+                  {% if item.last_message %}
+                    {% if item.last_message.sender == user %}Tú: {% endif %}
+                    {{ item.last_message.content|default:"[Archivo adjunto]" }}
+                  {% else %}
+                    <span style="color: var(--text-dim); font-style: italic;">Sin mensajes aún</span>
+                  {% endif %}
+                </p>
+              </div>
+            </a>
+          {% endfor %}
+        {% else %}
+          <div style="padding: 2.5rem 1rem; text-align: center; color: var(--text-dim); font-size: 0.88rem;">
+            No tienes chats activos todavía.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Start a chat with friends right panel -->
+    <div style="padding: 2rem; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+      <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(99, 102, 241, 0.15); display: flex; align-items: center; justify-content: center; color: #a5b4fc; margin-bottom: 1rem;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+      </div>
+
+      <h3 style="font-family: var(--font-display); font-size: 1.3rem; margin-bottom: 0.5rem;">Inicia una conversación</h3>
+      <p style="color: var(--text-muted); font-size: 0.9rem; max-width: 360px; margin-bottom: 1.5rem;">
+        Selecciona un chat a la izquierda o elige a uno de tus amigos para conversar en privado:
+      </p>
+
+      {% if friends %}
+        <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; max-width: 420px;">
+          {% for f in friends %}
+            <a href="{% url 'chat:start_chat' user_id=f.id %}" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 0.5rem; border-radius: var(--radius-full); padding: 0.4rem 0.9rem;">
+              <img src="{{ f.avatar_url }}" style="width: 22px; height: 22px; border-radius: 50%;">
+              <span>{{ f.first_name }}</span>
+            </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p style="color: var(--text-dim); font-size: 0.85rem; margin-bottom: 1rem;">
+          Necesitas añadir amigos primero para poder chatear con ellos.
+        </p>
+        <a href="{% url 'friends:search' %}" class="btn btn-primary btn-sm">Buscar Amigos</a>
+      {% endif %}
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}

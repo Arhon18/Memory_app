@@ -1,0 +1,57 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Memory - Guarda y Comparte Recuerdos con Amigos{% endblock %}</title>
+  <meta name="description" content="Memory es la red privada para compartir fotos, videos y recuerdos en conjunto con tus amigos y grupos íntimos.">
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <!-- Ambient background glow elements -->
+  <div class="ambient-glow top-left"></div>
+  <div class="ambient-glow bottom-right"></div>
+
+  {% if user.is_authenticated %}
+    {% include 'navbar.html' %}
+  {% endif %}
+
+  <main class="main-wrapper">
+    <!-- Messages / Alerts -->
+    {% if messages %}
+      <div class="alert-container">
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags|default:'info' }}">
+            <span>{{ message }}</span>
+            <button onclick="this.parentElement.remove()" style="background:none; border:none; color:inherit; cursor:pointer; font-size:1.1rem;">&times;</button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% block content %}
+    {% endblock %}
+  </main>
+
+  <script>
+    // Helper para CSRF token en peticiones AJAX
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+  </script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

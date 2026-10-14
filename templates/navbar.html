@@ -1,0 +1,167 @@
+{% load static %}
+<!-- Top Header Navbar (Desktop & Mobile) -->
+<nav class="navbar" id="main-nav">
+  <div class="nav-container">
+    <!-- Brand / Logo -->
+    <a href="{% url 'memories:feed' %}" class="nav-brand" id="brand-link">
+      <div class="brand-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+          <polyline points="16 6 12 2 8 6"></polyline>
+          <line x1="12" y1="2" x2="12" y2="15"></line>
+        </svg>
+      </div>
+      <span class="brand-name">Memory</span>
+    </a>
+
+    <!-- Desktop Navigation Links (Hidden on mobile) -->
+    <div class="nav-links desktop-only">
+      <a href="{% url 'memories:feed' %}" class="nav-item" id="nav-feed">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        <span>Recuerdos</span>
+      </a>
+
+      <a href="{% url 'groups:list' %}" class="nav-item" id="nav-groups">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+        </svg>
+        <span>Grupos</span>
+      </a>
+
+      <a href="{% url 'chat:inbox' %}" class="nav-item" id="nav-chat">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+        <span>Chat Privado</span>
+      </a>
+
+      <a href="{% url 'friends:requests' %}" class="nav-item" id="nav-friends">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <line x1="19" y1="8" x2="19" y2="14"></line>
+          <line x1="22" y1="11" x2="16" y2="11"></line>
+        </svg>
+        <span>Amigos</span>
+        {% if pending_friend_requests_count > 0 %}
+          <span class="nav-badge" id="friend-requests-badge">{{ pending_friend_requests_count }}</span>
+        {% endif %}
+      </a>
+
+      <a href="{% url 'friends:search' %}" class="nav-item" id="nav-search">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <span>Buscar</span>
+      </a>
+    </div>
+
+    <!-- Desktop Right CTA & Profile -->
+    <div class="nav-user desktop-only">
+      <a href="{% url 'memories:create' %}" class="btn btn-primary btn-sm" id="btn-upload-memory">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        <span>Subir Recuerdo</span>
+      </a>
+
+      <a href="{% url 'accounts:profile' user_id=user.id %}" title="Mi Perfil" id="profile-avatar-link">
+        <img src="{{ user.avatar_url }}" alt="{{ user.first_name }}" class="user-avatar-sm">
+      </a>
+
+      <a href="{% url 'accounts:logout' %}" class="btn btn-secondary btn-sm" title="Cerrar Sesión" id="btn-logout">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+      </a>
+    </div>
+
+    <!-- Mobile Top Header Quick Icons (Search & Notifications) -->
+    <div class="mobile-top-actions mobile-only">
+      <a href="{% url 'friends:search' %}" class="mobile-action-icon" title="Buscar Amigos">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </a>
+
+      <a href="{% url 'friends:requests' %}" class="mobile-action-icon" title="Solicitudes">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <line x1="19" y1="8" x2="19" y2="14"></line>
+          <line x1="22" y1="11" x2="16" y2="11"></line>
+        </svg>
+        {% if pending_friend_requests_count > 0 %}
+          <span class="mobile-badge-dot"></span>
+        {% endif %}
+      </a>
+
+      <a href="{% url 'accounts:logout' %}" class="mobile-action-icon" title="Cerrar Sesión">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+      </a>
+    </div>
+
+  </div>
+</nav>
+
+<!-- Mobile Bottom Navigation Bar (App Experience) -->
+<nav class="mobile-bottom-nav mobile-only" id="mobile-nav">
+  <div class="mobile-bottom-inner">
+    <a href="{% url 'memories:feed' %}" class="mobile-nav-btn {% if request.resolver_match.url_name == 'feed' %}active{% endif %}" title="Recuerdos">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+      </svg>
+      <span>Feed</span>
+    </a>
+
+    <a href="{% url 'groups:list' %}" class="mobile-nav-btn {% if 'groups' in request.path %}active{% endif %}" title="Grupos">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+        <circle cx="9" cy="7" r="4"></circle>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+      </svg>
+      <span>Grupos</span>
+    </a>
+
+    <!-- Center Floating Plus Button -->
+    <a href="{% url 'memories:create' %}" class="mobile-nav-btn-center" title="Subir Recuerdo">
+      <div class="center-btn-bubble">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+      </div>
+    </a>
+
+    <a href="{% url 'chat:inbox' %}" class="mobile-nav-btn {% if 'chat' in request.path %}active{% endif %}" title="Chat">
+      <div style="position: relative; display: inline-block;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+      </div>
+      <span>Chat</span>
+    </a>
+
+    <a href="{% url 'accounts:profile' user_id=user.id %}" class="mobile-nav-btn {% if 'profile' in request.path and request.resolver_match.kwargs.user_id == user.id %}active{% endif %}" title="Perfil">
+      <img src="{{ user.avatar_url }}" alt="{{ user.first_name }}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 2px solid {% if 'profile' in request.path %}var(--primary){% else %}transparent{% endif %};">
+      <span>Perfil</span>
+    </a>
+  </div>
+</nav>
